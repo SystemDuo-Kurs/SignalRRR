@@ -1,0 +1,48 @@
+﻿@page "/"
+@using Microsoft.AspNetCore.SignalR.Client
+@using SignalRRR.Shared
+@inject NavigationManager NM
+
+<ul>
+    @foreach(Poruka p in Poruke)
+    {
+        <li>@p.Vreme.TimeOfDay -- @p.Ime : @p.Tekst</li>
+    }
+</ul>
+
+<EditForm Model=Poruka OnSubmit=Slanje>
+    <b>Ime:</b><InputText @bind-Value=Poruka.Ime/><br />
+    <b>Poruka:</b><InputText @bind-Value=Poruka.Tekst/>
+
+    <button type="submit" class="btn btn-primary">Teeest</button>
+</EditForm>
+
+@code
+{
+    private HubConnection _hc;
+    private Poruka Poruka = new();
+    private List<Poruka> Poruke { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _hc = new HubConnectionBuilder()
+            .WithUrl(NM.BaseUri + "chat").Build();
+
+        _hc.On<Poruka>("dodaj", p => Dodavanje(p));
+
+        await _hc.StartAsync();
+    }
+
+    public async void Slanje()
+    {
+        await _hc.SendAsync("Test", Poruka);
+        Poruka.Tekst = string.Empty;
+        StateHasChanged();
+    }
+
+    public void Dodavanje(Poruka p )
+    {
+        Poruke.Add(p);
+        StateHasChanged();
+    }
+}
